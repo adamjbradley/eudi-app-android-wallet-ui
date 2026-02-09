@@ -199,6 +199,15 @@ interface WalletCoreConfig {
         )
 
     /**
+     * URL for dynamically fetching RP certificates at startup.
+     * When non-null, the wallet fetches certificates from this endpoint
+     * and merges them with the static trust store, eliminating the need
+     * to rebuild the app when RP certificates change.
+     * Set to null to disable dynamic fetching (default).
+     */
+    val rpCertificatesUrl: String? get() = null
+
+    /**
      * Host for the Wallet Provider.
      */
     val walletProviderHost: String

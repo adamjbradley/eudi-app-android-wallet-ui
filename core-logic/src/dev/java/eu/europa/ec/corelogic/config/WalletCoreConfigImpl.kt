@@ -73,7 +73,8 @@ internal class WalletCoreConfigImpl(
                         R.raw.r45_staging,
                         R.raw.test_pid_issuer,
                         R.raw.verifier_example_com,
-                        R.raw.verifier2_theaustraliahack
+                        R.raw.verifier2_theaustraliahack,
+                        R.raw.rp_theaustraliahack
                     )
                 }
             }
@@ -90,6 +91,9 @@ internal class WalletCoreConfigImpl(
                 .withDPoPUsage(OpenId4VciManager.Config.DPoPUsage.Disabled)
                 .build()
         )
+
+    override val rpCertificatesUrl: String
+        get() = "https://verifier2.theaustraliahack.com/.well-known/rp-certificates"
 
     override val walletProviderHost: String
         get() = "https://dev.wallet-provider.eudiw.dev"

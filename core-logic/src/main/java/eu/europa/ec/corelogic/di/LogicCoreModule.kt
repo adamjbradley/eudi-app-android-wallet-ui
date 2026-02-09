@@ -42,6 +42,10 @@ import org.koin.core.annotation.Module
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Single
 import org.koin.mp.KoinPlatform
+import eu.europa.ec.corelogic.config.ReaderTrustStoreUpdater
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 const val PRESENTATION_SCOPE_ID = "presentation_scope_id"
 
@@ -57,14 +61,30 @@ fun provideEudiWallet(
     walletCoreTransactionLogController: WalletCoreTransactionLogController,
     walletCoreAttestationProvider: WalletCoreAttestationProvider,
     httpClient: HttpClient
-): EudiWallet = EudiWallet(
-    context = context,
-    config = walletCoreConfig.config,
-    walletProvider = walletCoreAttestationProvider
-) {
-    withLogger(walletCoreLogController)
-    withTransactionLogger(walletCoreTransactionLogController)
-    withKtorHttpClientFactory { httpClient }
+): EudiWallet {
+    val wallet = EudiWallet(
+        context = context,
+        config = walletCoreConfig.config,
+        walletProvider = walletCoreAttestationProvider
+    ) {
+        withLogger(walletCoreLogController)
+        withTransactionLogger(walletCoreTransactionLogController)
+        withKtorHttpClientFactory { httpClient }
+    }
+
+    // Dynamically fetch RP certificates at startup (if configured)
+    walletCoreConfig.rpCertificatesUrl?.let { url ->
+        val updater = ReaderTrustStoreUpdater(context, url)
+        CoroutineScope(Dispatchers.IO).launch {
+            val dynamicCerts = updater.fetchCertificates()
+            if (dynamicCerts.isNotEmpty()) {
+                val merged = ReaderTrustStoreUpdater.deduplicateByFingerprint(dynamicCerts)
+                wallet.setTrustedReaderCertificates(merged)
+            }
+        }
+    }
+
+    return wallet
 }
 
 @Single
